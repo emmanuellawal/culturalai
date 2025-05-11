@@ -6,15 +6,13 @@ import CulturalBriefingStack from './CulturalBriefingStack';
 import TextAnalysisScreen from '../screens/TextAnalysisScreen';
 import IdiomsStack from './IdiomsStack';
 import ImageAnalysisPlaceholderScreen from '../screens/ImageAnalysisPlaceholderScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import { MainTabParamList } from '../types/navigation';
 
 // Create placeholder screens for the other tabs
 const PlaceholderScreen = ({ title }: { title: string }) => (
   <HomeScreen />
 );
-
-// Use TextAnalysisScreen for Analysis tab
-const SettingsScreen = () => <PlaceholderScreen title="Settings" />;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 

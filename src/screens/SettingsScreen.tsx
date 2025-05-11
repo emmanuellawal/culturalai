@@ -25,7 +25,7 @@ type Props = {
   navigation: SettingsScreenNavigationProp;
 };
 
-const SettingsScreen: React.FC<Props> = () => {
+const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { user, signOut } = useAuth();
 
   const handleLogout = async () => {
@@ -130,12 +130,12 @@ const SettingsScreen: React.FC<Props> = () => {
         {renderSettingItem(
           "Privacy Policy", 
           "shield-checkmark-outline", 
-          () => showComingSoonAlert("privacy policy")
+          () => navigation.navigate('PrivacyPolicy')
         )}
         {renderSettingItem(
           "Terms of Service", 
           "document-text-outline", 
-          () => showComingSoonAlert("terms of service")
+          () => navigation.navigate('TermsOfService')
         )}
         {renderSettingItem(
           "Data Collection Consent", 

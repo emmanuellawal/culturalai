@@ -6,6 +6,8 @@ import { useAuth } from '../services/authContext';
 import AuthStack from './AuthStack';
 import MainTab from './MainTab';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import PrivacyPolicyScreen from '../assets/legal/privacy-policy';
+import TermsOfServiceScreen from '../assets/legal/terms-of-service';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -24,7 +26,11 @@ const RootNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={MainTab} />
+          <>
+            <Stack.Screen name="Main" component={MainTab} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+            <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />
         )}

@@ -8,7 +8,9 @@
     "dev": "nodemon index.js",
     "test": "mocha --require test/setup.js 'test/**/*.test.js'",
     "test:watch": "npm test -- --watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:setup": "node scripts/setup-cloud-database.js",
+    "postinstall": "node -e \"console.log('Server installed successfully')\""
   },
   "keywords": [],
   "author": "",
@@ -17,16 +19,22 @@
   "dependencies": {
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.17.1",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.0",
     "morgan": "^1.10.0",
-    "uuid": "^9.0.0"
+    "mssql": "^11.0.1",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "eslint": "^8.55.0",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.15",
     "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

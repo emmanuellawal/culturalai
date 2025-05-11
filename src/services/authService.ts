@@ -1,4 +1,7 @@
 import { SignUpCredentials, LoginCredentials, User } from '../types/user';
+import { executeQuery } from '../utils/database';
+import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
 // For demo purposes, we'll use a mock API
 // In a real application, these would call actual API endpoints
@@ -21,21 +24,45 @@ export const signUp = async (credentials: SignUpCredentials): Promise<User> => {
     throw new Error('Password must be at least 8 characters long');
   }
   
-  // TODO: Replace with actual API call
-  // For demo, we'll just simulate an API response
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Simulate a successful response
-      resolve({
-        id: 'user-' + Math.random().toString(36).substr(2, 9),
+  try {
+    // Check if email already exists
+    const existingUsers = await executeQuery<{ count: number }>(
+      'SELECT COUNT(*) as count FROM Users WHERE Email = @email',
+      { email: credentials.email }
+    );
+    
+    if (existingUsers[0].count > 0) {
+      throw new Error('Email already exists');
+    }
+    
+    // Generate new user ID
+    const userId = `user-${uuidv4()}`;
+    
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(credentials.password, salt);
+    
+    // Insert the new user
+    await executeQuery(
+      `INSERT INTO Users (UserID, Email, HashedPassword, CreatedAt, IsActive, IsVerified) 
+       VALUES (@userId, @email, @hashedPassword, GETDATE(), 1, 0)`,
+      {
+        userId,
         email: credentials.email,
-        createdAt: new Date().toISOString()
-      });
-      
-      // Uncomment to simulate an error
-      // reject(new Error('Email already exists'));
-    }, 1000);
-  });
+        hashedPassword
+      }
+    );
+    
+    // Return the created user (without password)
+    return {
+      id: userId,
+      email: credentials.email,
+      createdAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error during sign up:', error);
+    throw error;
+  }
 };
 
 export const login = async (credentials: LoginCredentials): Promise<User> => {
@@ -45,25 +72,43 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
     throw new Error('Invalid email format');
   }
   
-  // TODO: Replace with actual API call
-  // For demo, we'll just simulate an API response
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Simulate a successful response
-      resolve({
-        id: 'user-' + Math.random().toString(36).substr(2, 9),
-        email: credentials.email,
-        createdAt: new Date().toISOString()
-      });
-      
-      // Uncomment to simulate an error
-      // reject(new Error('Invalid credentials'));
-    }, 1000);
-  });
+  try {
+    // Find user by email
+    const users = await executeQuery<User & { HashedPassword: string }>(
+      `SELECT UserID as id, Email as email, HashedPassword, CreatedAt as createdAt
+       FROM Users WHERE Email = @email AND IsActive = 1`,
+      { email: credentials.email }
+    );
+    
+    if (users.length === 0) {
+      throw new Error('Invalid credentials');
+    }
+    
+    const user = users[0];
+    
+    // Verify password
+    const isMatch = await bcrypt.compare(credentials.password, user.HashedPassword);
+    if (!isMatch) {
+      throw new Error('Invalid credentials');
+    }
+    
+    // Update LastLogin
+    await executeQuery(
+      'UPDATE Users SET LastLogin = GETDATE() WHERE UserID = @userId',
+      { userId: user.id }
+    );
+    
+    // Return the user without password
+    const { HashedPassword, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  } catch (error) {
+    console.error('Error during login:', error);
+    throw error;
+  }
 };
 
 export const logout = async (): Promise<void> => {
-  // TODO: Replace with actual API call if needed
-  // For now, just return a resolved promise
+  // No database operation required for logout in this implementation
+  // Client-side token will be removed
   return Promise.resolve();
 }; 

@@ -2,6 +2,9 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
+import CulturalBriefingStack from './CulturalBriefingStack';
+import TextAnalysisScreen from '../screens/TextAnalysisScreen';
+import IdiomsStack from './IdiomsStack';
 import { MainTabParamList } from '../types/navigation';
 
 // Create placeholder screens for the other tabs
@@ -9,9 +12,7 @@ const PlaceholderScreen = ({ title }: { title: string }) => (
   <HomeScreen />
 );
 
-const CulturalBriefingsScreen = () => <PlaceholderScreen title="Cultural Briefings" />;
-const AnalysisScreen = () => <PlaceholderScreen title="Analysis" />;
-const IdiomsScreen = () => <PlaceholderScreen title="Idioms" />;
+// Use TextAnalysisScreen for Analysis tab
 const SettingsScreen = () => <PlaceholderScreen title="Settings" />;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -41,7 +42,7 @@ const MainTab = () => {
         },
         tabBarActiveTintColor: '#4A6FA5',
         tabBarInactiveTintColor: 'gray',
-        headerShown: true,
+        headerShown: route.name !== 'CulturalBriefings' && route.name !== 'Idioms', // Hide header for CulturalBriefings and Idioms since they have their own stack
         headerStyle: {
           backgroundColor: '#4A6FA5',
         },
@@ -58,17 +59,17 @@ const MainTab = () => {
       />
       <Tab.Screen 
         name="CulturalBriefings" 
-        component={CulturalBriefingsScreen} 
+        component={CulturalBriefingStack} 
         options={{ title: 'Cultural Briefings' }} 
       />
       <Tab.Screen 
         name="Analysis" 
-        component={AnalysisScreen} 
+        component={TextAnalysisScreen} 
         options={{ title: 'Analysis' }} 
       />
       <Tab.Screen 
         name="Idioms" 
-        component={IdiomsScreen} 
+        component={IdiomsStack} 
         options={{ title: 'Idioms' }} 
       />
       <Tab.Screen 

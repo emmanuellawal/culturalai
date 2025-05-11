@@ -15,8 +15,20 @@ export type AuthStackParamList = {
 // Main tab navigator parameter list
 export type MainTabParamList = {
   Home: undefined;
-  CulturalBriefings: undefined;
+  CulturalBriefings: NavigatorScreenParams<CulturalBriefingStackParamList>;
   Analysis: undefined;
-  Idioms: undefined;
+  Idioms: NavigatorScreenParams<IdiomsStackParamList>;
   Settings: undefined;
+};
+
+// Cultural Briefing stack parameter list
+export type CulturalBriefingStackParamList = {
+  CultureSelection: undefined;
+  CulturalBriefingDetail: { cultureId: string };
+};
+
+// Idioms stack parameter list
+export type IdiomsStackParamList = {
+  IdiomSearch: undefined;
+  IdiomDetail: { idiomId: string, idiomPhrase?: string };
 }; 

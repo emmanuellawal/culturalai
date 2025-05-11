@@ -18,6 +18,7 @@ export type MainTabParamList = {
   CulturalBriefings: NavigatorScreenParams<CulturalBriefingStackParamList>;
   Analysis: undefined;
   Idioms: NavigatorScreenParams<IdiomsStackParamList>;
+  ImageAnalysis: undefined;
   Settings: undefined;
 };
 

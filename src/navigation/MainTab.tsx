@@ -5,6 +5,7 @@ import HomeScreen from '../screens/HomeScreen';
 import CulturalBriefingStack from './CulturalBriefingStack';
 import TextAnalysisScreen from '../screens/TextAnalysisScreen';
 import IdiomsStack from './IdiomsStack';
+import ImageAnalysisPlaceholderScreen from '../screens/ImageAnalysisPlaceholderScreen';
 import { MainTabParamList } from '../types/navigation';
 
 // Create placeholder screens for the other tabs
@@ -32,6 +33,8 @@ const MainTab = () => {
             iconName = focused ? 'analytics' : 'analytics-outline';
           } else if (route.name === 'Idioms') {
             iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+          } else if (route.name === 'ImageAnalysis') {
+            iconName = focused ? 'camera' : 'camera-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'settings' : 'settings-outline';
           } else {
@@ -71,6 +74,11 @@ const MainTab = () => {
         name="Idioms" 
         component={IdiomsStack} 
         options={{ title: 'Idioms' }} 
+      />
+      <Tab.Screen 
+        name="ImageAnalysis" 
+        component={ImageAnalysisPlaceholderScreen} 
+        options={{ title: 'Image Analysis' }} 
       />
       <Tab.Screen 
         name="Settings" 

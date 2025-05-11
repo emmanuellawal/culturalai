@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --require test/setup.js 'test/**/*.test.js'",
+    "test:watch": "npm test -- --watch",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
@@ -18,9 +20,13 @@
     "express": "^4.17.1",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "eslint": "^8.55.0",
+    "mocha": "^10.2.0",
+    "nodemon": "^2.0.15",
+    "supertest": "^6.3.3"
   }
 }

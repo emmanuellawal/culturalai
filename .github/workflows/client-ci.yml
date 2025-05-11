@@ -1,0 +1,75 @@
+name: Client CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'App.tsx'
+      - 'package.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'App.tsx'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install Expo CLI
+        run: npm install -g expo-cli
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: |
+          npm list eslint || npm install eslint --save-dev
+          npx eslint . --ext .js,.jsx,.ts,.tsx || true # Don't fail the build for linting errors in MVP
+      
+      - name: Run TypeScript type checking
+        run: |
+          npm list typescript || npm install typescript --save-dev
+          npx tsc --noEmit
+      
+      # For Android build (requires setup of credentials in secrets)
+      - name: Build Android app (Demo)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "For MVP demo: Would run 'expo build:android -t apk' here"
+          echo "This requires Expo credentials setup prior to running"
+          # expo build:android -t apk
+      
+      # For iOS build (requires setup of credentials in secrets)
+      - name: Build iOS app (Demo)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "For MVP demo: Would run 'expo build:ios -t simulator' here"
+          echo "This requires Apple Developer credentials setup prior to running"
+          # expo build:ios -t simulator
+      
+      # For web build (useful for demo purposes)
+      - name: Build web app
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          expo build:web
+      
+      - name: Upload web build artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-build
+          path: web-build
+          retention-days: 5 

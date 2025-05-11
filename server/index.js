@@ -13,6 +13,7 @@ const morgan = require('morgan');
 // Import our utilities
 const { encrypt, decrypt, anonymizePII } = require('./utils/encryption');
 const { privacyLogger, processTextForStorage } = require('./utils/dataRetention');
+const routes = require('./routes'); // Import our routes
 
 // Create Express app
 const app = express();
@@ -66,6 +67,9 @@ const authenticate = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
+
+// Mount our routes
+app.use('/api', routes);
 
 // Routes
 app.get('/api/health', (req, res) => {

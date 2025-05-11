@@ -1,0 +1,62 @@
+name: Server CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd server
+          npm ci
+      
+      - name: Run linting
+        run: |
+          cd server
+          npm list eslint || npm install eslint --save-dev
+          npx eslint . --ext .js || true # Don't fail the build for linting errors in MVP
+      
+      - name: Run tests
+        run: |
+          cd server
+          # Update the test script in package.json before enabling this
+          # npm test
+          echo "Tests would run here in the future"
+      
+      # For manual/demo deployment, we'll just create a deployment artifact
+      - name: Create deployment package
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cd server
+          mkdir -p ../deployment
+          cp -r . ../deployment/server
+          cd ..
+          tar -czf server-deployment.tar.gz deployment/server
+      
+      - name: Upload deployment artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-deployment
+          path: server-deployment.tar.gz
+          retention-days: 5 

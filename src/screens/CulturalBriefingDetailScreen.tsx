@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCulturalBriefing } from '../services/cultureService';
 import { CulturalBriefing, CulturalNorm, NormCategory } from '../types/culture';
 import { CulturalBriefingStackParamList } from '../types/navigation';
+import DisclaimerBanner from '../components/DisclaimerBanner';
+import FeedbackButton from '../components/FeedbackButton';
 
 type CulturalBriefingDetailScreenRouteProp = RouteProp<CulturalBriefingStackParamList, 'CulturalBriefingDetail'>;
 type CulturalBriefingDetailScreenNavigationProp = StackNavigationProp<CulturalBriefingStackParamList, 'CulturalBriefingDetail'>;
@@ -115,6 +117,7 @@ const CulturalBriefingDetailScreen: React.FC<Props> = ({ route, navigation }) =>
   const [sections, setSections] = useState<NormSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   useEffect(() => {
     const fetchBriefing = async () => {
@@ -268,23 +271,35 @@ const CulturalBriefingDetailScreen: React.FC<Props> = ({ route, navigation }) =>
           <Ionicons name="arrow-back" size={24} color="#4A6FA5" />
         </TouchableOpacity>
         
-        <View style={styles.cultureHeader}>
-          <CultureFlag cultureId={briefing.cultureInfo.id} />
-          <View style={styles.cultureInfo}>
-            <Text style={styles.cultureName}>{briefing.cultureInfo.name}</Text>
-            <Text style={styles.cultureRegion}>{briefing.cultureInfo.region}</Text>
-            <Text style={styles.cultureLanguage}>Primary Language: {briefing.cultureInfo.primaryLanguage}</Text>
+        <View style={styles.headerContainer}>
+          <View style={styles.cultureInfoContainer}>
+            <CultureFlag cultureId={cultureId} />
+            <View style={styles.cultureTextContainer}>
+              <Text style={styles.cultureName}>{briefing.cultureInfo.name}</Text>
+              <Text style={styles.cultureRegion}>{briefing.cultureInfo.region}</Text>
+            </View>
           </View>
+          
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSaveOffline}
+          >
+            <Ionicons name="download-outline" size={18} color="#4A6FA5" />
+            <Text style={styles.saveButtonText}>Save Offline</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.cultureDescription}>{briefing.cultureInfo.description}</Text>
         
-        <TouchableOpacity 
-          style={styles.saveOfflineButton}
-          onPress={handleSaveOffline}
-        >
-          <Ionicons name="download-outline" size={16} color="#fff" />
-          <Text style={styles.saveOfflineButtonText}>Save for Offline Access</Text>
-        </TouchableOpacity>
+        {showDisclaimer && (
+          <DisclaimerBanner 
+            type="cultural" 
+            onClose={() => setShowDisclaimer(false)}
+          />
+        )}
+        
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.descriptionTitle}>About {briefing.cultureInfo.name} Culture</Text>
+          <Text style={styles.descriptionText}>{briefing.cultureInfo.description}</Text>
+        </View>
       </View>
       
       <View style={styles.contentContainer}>
@@ -299,6 +314,21 @@ const CulturalBriefingDetailScreen: React.FC<Props> = ({ route, navigation }) =>
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
           SectionSeparatorComponent={() => <View style={styles.sectionSeparator} />}
+          ListFooterComponent={() => (
+            <View style={styles.footerContainer}>
+              <Text style={styles.lastUpdatedText}>
+                Last Updated: {new Date(briefing.lastUpdated).toLocaleDateString()}
+              </Text>
+              
+              <View style={styles.feedbackButtonContainer}>
+                <FeedbackButton 
+                  cultureId={cultureId}
+                  analysisType="cultural_briefing"
+                  compact={true}
+                />
+              </View>
+            </View>
+          )}
         />
       </View>
     </SafeAreaView>
@@ -325,21 +355,16 @@ const styles = StyleSheet.create({
   backButton: {
     marginBottom: 10,
   },
-  cultureHeader: {
+  headerContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  flagContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    overflow: 'hidden',
-    justifyContent: 'center',
+  cultureInfoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    marginRight: 16,
   },
-  cultureInfo: {
+  cultureTextContainer: {
     flex: 1,
   },
   cultureName: {
@@ -353,11 +378,32 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 2,
   },
-  cultureLanguage: {
-    fontSize: 14,
-    color: '#666',
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f4f8',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#d0e1f9',
   },
-  cultureDescription: {
+  saveButtonText: {
+    color: '#4A6FA5',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  descriptionContainer: {
+    marginBottom: 12,
+  },
+  descriptionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  descriptionText: {
     fontSize: 14,
     color: '#555',
     lineHeight: 20,
@@ -524,43 +570,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  saveOfflineButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#4A6FA5',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginTop: 12,
-  },
-  saveOfflineButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  normActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  footerContainer: {
+    padding: 16,
     marginTop: 8,
   },
-  reminderButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f4f8',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#d0e1f9',
-  },
-  reminderButtonText: {
-    color: '#4A6FA5',
+  lastUpdatedText: {
     fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
+    color: '#666',
+    fontStyle: 'italic',
+    marginBottom: 16,
+  },
+  feedbackButtonContainer: {
+    marginBottom: 16,
+    alignItems: 'flex-end',
   },
 });
 

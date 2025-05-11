@@ -16,6 +16,8 @@ import { getCultures } from '../services/cultureService';
 import { analyzeText } from '../services/analysisService';
 import { Culture } from '../types/culture';
 import ConsentModal from '../components/ConsentModal';
+import DisclaimerBanner from '../components/DisclaimerBanner';
+import FeedbackButton from '../components/FeedbackButton';
 import { 
   getTextAnalysisConsent, 
   storeTextAnalysisConsent, 
@@ -32,6 +34,7 @@ const TextAnalysisScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [hasCheckedConsent, setHasCheckedConsent] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | undefined>(undefined);
 
   const navigation = useNavigation();
 
@@ -103,6 +106,8 @@ const TextAnalysisScreen = () => {
     try {
       const result = await analyzeText(text, selectedCultureId, isMyText);
       setFeedback(result);
+      // Generate a simple analysis ID for feedback purposes
+      setAnalysisId(`text-${Date.now()}`);
     } catch (error) {
       console.error('Text analysis error:', error);
       setError('Failed to analyze text. Please try again later.');
@@ -142,6 +147,9 @@ const TextAnalysisScreen = () => {
     return (
       <View style={styles.feedbackContainer}>
         <Text style={styles.feedbackTitle}>Analysis Results</Text>
+        
+        {/* Add disclaimer banner for AI analysis */}
+        <DisclaimerBanner type="ai" />
         
         {feedback.summary && (
           <View style={styles.summaryContainer}>
@@ -189,6 +197,18 @@ const TextAnalysisScreen = () => {
             ))}
           </View>
         )}
+        
+        {/* Add cultural disclaimer */}
+        <DisclaimerBanner type="cultural" />
+        
+        {/* Add feedback button */}
+        <View style={styles.feedbackButtonContainer}>
+          <FeedbackButton 
+            analysisId={analysisId} 
+            analysisType="text" 
+            cultureId={selectedCultureId} 
+          />
+        </View>
       </View>
     );
   };
@@ -198,50 +218,49 @@ const TextAnalysisScreen = () => {
       <View style={styles.contentContainer}>
         <Text style={styles.title}>Real-Time Text Analysis</Text>
         <Text style={styles.description}>
-          Enter text and select a culture to receive AI-powered feedback on cultural nuances and potential misunderstandings.
+          Enter text to analyze for cultural nuances and receive feedback.
         </Text>
-
+        
+        {/* Add disclaimer banner at the top */}
+        <DisclaimerBanner type="cultural" compact={true} />
+        
         <View style={styles.formContainer}>
-          <Text style={styles.label}>Select Target Culture:</Text>
+          <Text style={styles.label}>Select Culture:</Text>
           <View style={styles.pickerContainer}>
-            {cultures.length > 0 ? (
-              <Picker
-                selectedValue={selectedCultureId}
-                style={styles.picker}
-                onValueChange={(itemValue) => setSelectedCultureId(itemValue as string)}
-              >
-                {cultures.map((culture) => (
-                  <Picker.Item 
-                    key={culture.id} 
-                    label={culture.name} 
-                    value={culture.id} 
-                  />
-                ))}
-              </Picker>
-            ) : (
-              <Text style={styles.pickerPlaceholder}>Loading cultures...</Text>
-            )}
+            <Picker
+              selectedValue={selectedCultureId}
+              onValueChange={(itemValue) => setSelectedCultureId(itemValue)}
+              style={styles.picker}
+            >
+              {cultures.map((culture) => (
+                <Picker.Item 
+                  key={culture.id} 
+                  label={culture.name} 
+                  value={culture.id} 
+                />
+              ))}
+            </Picker>
           </View>
 
-          <Text style={styles.label}>Text Type:</Text>
+          <Text style={styles.label}>Text Origin:</Text>
           <View style={styles.radioContainer}>
             <View style={styles.radioOption}>
               <RadioButton
-                value="myText"
+                value="mine"
                 status={isMyText ? 'checked' : 'unchecked'}
                 onPress={() => setIsMyText(true)}
                 color="#4A6FA5"
               />
-              <Text onPress={() => setIsMyText(true)}>My Text (For my writing)</Text>
+              <Text style={styles.radioLabel}>My Text (I'm writing it)</Text>
             </View>
             <View style={styles.radioOption}>
               <RadioButton
-                value="theirText"
+                value="theirs"
                 status={!isMyText ? 'checked' : 'unchecked'}
                 onPress={() => setIsMyText(false)}
                 color="#4A6FA5"
               />
-              <Text onPress={() => setIsMyText(false)}>Their Text (For interpretation)</Text>
+              <Text style={styles.radioLabel}>Their Text (I'm reading it)</Text>
             </View>
           </View>
 
@@ -249,10 +268,10 @@ const TextAnalysisScreen = () => {
           <TextInput
             style={styles.textInput}
             multiline
-            placeholder="Type or paste the text you want to analyze..."
+            numberOfLines={6}
+            placeholder="Type or paste text here..."
             value={text}
             onChangeText={setText}
-            textAlignVertical="top"
           />
 
           <TouchableOpacity 
@@ -261,9 +280,9 @@ const TextAnalysisScreen = () => {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.buttonText}>Analyze Text</Text>
+              <Text style={styles.analyzeButtonText}>Analyze Text</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -275,23 +294,13 @@ const TextAnalysisScreen = () => {
         )}
 
         {renderFeedback()}
-      </View>
 
-      {/* Consent Modal */}
-      <ConsentModal
-        visible={showConsentModal}
-        onClose={() => setShowConsentModal(false)}
-        onAccept={handleConsentAccepted}
-        onDecline={handleConsentDeclined}
-        title="Data Processing Consent"
-        message={
-          "Before we analyze your text, we need your permission to process it for cultural context analysis. " +
-          "We prioritize your privacy: your text is only processed to provide you with cultural insights and is not permanently stored. " +
-          "You can also choose to help us improve our AI models with anonymous data."
-        }
-        acceptButtonText="I Consent"
-        declineButtonText="No Thanks"
-      />
+        <ConsentModal 
+          visible={showConsentModal}
+          onAccept={handleConsentAccepted}
+          onDecline={handleConsentDeclined}
+        />
+      </View>
     </ScrollView>
   );
 };
@@ -299,7 +308,7 @@ const TextAnalysisScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#f5f5f5',
   },
   contentContainer: {
     padding: 16,
@@ -307,46 +316,41 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4A6FA5',
+    color: '#333',
     marginBottom: 8,
   },
   description: {
     fontSize: 16,
-    color: '#4D5156',
-    marginBottom: 20,
+    color: '#666',
+    marginBottom: 16,
   },
   formContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-    marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4D5156',
+    fontWeight: '500',
+    color: '#333',
     marginBottom: 8,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#E1E4E8',
+    borderColor: '#ddd',
     borderRadius: 4,
     marginBottom: 16,
   },
   picker: {
     height: 50,
   },
-  pickerPlaceholder: {
-    padding: 12,
-    color: '#A0A5AA',
-  },
   radioContainer: {
-    flexDirection: 'column',
     marginBottom: 16,
   },
   radioOption: {
@@ -354,12 +358,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  radioLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E1E4E8',
+    borderColor: '#ddd',
     borderRadius: 4,
     padding: 12,
-    height: 120,
+    fontSize: 16,
+    minHeight: 120,
+    textAlignVertical: 'top',
     marginBottom: 16,
   },
   analyzeButton: {
@@ -368,24 +378,26 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
   },
-  buttonText: {
-    color: '#FFFFFF',
+  analyzeButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   errorContainer: {
-    backgroundColor: '#FEECEC',
-    padding: 12,
-    borderRadius: 4,
-    marginBottom: 20,
+    backgroundColor: '#ffebee',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
   },
   errorText: {
-    color: '#D93025',
+    color: '#c62828',
+    fontSize: 16,
   },
   feedbackContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -395,78 +407,94 @@ const styles = StyleSheet.create({
   feedbackTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4A6FA5',
+    color: '#333',
     marginBottom: 16,
   },
   summaryContainer: {
-    backgroundColor: '#F0F4F9',
-    padding: 12,
-    borderRadius: 4,
     marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#f0f4f8',
+    borderRadius: 8,
   },
   summaryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    color: '#333',
+    marginBottom: 8,
   },
   summaryText: {
-    fontSize: 14,
-    color: '#4D5156',
+    fontSize: 16,
+    color: '#333',
   },
   issuesTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 8,
+    color: '#333',
+    marginBottom: 12,
   },
   issueItem: {
-    backgroundColor: '#FFF9E6',
+    marginBottom: 16,
     padding: 12,
-    borderRadius: 4,
-    marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4A6FA5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   issueType: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#E6A817',
+    color: '#4A6FA5',
     marginBottom: 4,
   },
   issueText: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    marginBottom: 4,
-  },
-  issueExplanation: {
-    fontSize: 14,
-    color: '#4D5156',
-    marginBottom: 4,
-  },
-  issueSuggestion: {
-    fontSize: 14,
-    color: '#4A6FA5',
-    marginBottom: 4,
-  },
-  idiomButton: {
-    backgroundColor: '#EAF1FB',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  idiomButtonText: {
-    color: '#4A6FA5',
-    fontSize: 14,
-  },
-  alternativesTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
+    fontWeight: '500',
+    color: '#333',
     marginBottom: 8,
   },
-  alternativeText: {
+  issueExplanation: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 8,
+  },
+  issueSuggestion: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 8,
+  },
+  idiomButton: {
+    backgroundColor: '#4A6FA5',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  idiomButtonText: {
+    color: '#fff',
     fontSize: 14,
-    color: '#4D5156',
-    marginBottom: 4,
+    fontWeight: '500',
+  },
+  alternativesTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  alternativeText: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 8,
+    paddingLeft: 8,
+  },
+  feedbackButtonContainer: {
+    marginTop: 16,
+    alignItems: 'flex-end',
   }
 });
 

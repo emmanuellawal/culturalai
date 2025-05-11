@@ -214,6 +214,64 @@ app.post('/api/user/data-export-request', authenticate, (req, res) => {
   }
 });
 
+// Feedback submission endpoint for reporting issues with AI analysis
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { 
+      analysisId, 
+      analysisType, 
+      cultureId, 
+      feedbackType, 
+      feedbackText,
+      timestamp 
+    } = req.body;
+    
+    // Basic validation
+    if (!feedbackType || !feedbackText) {
+      return res.status(400).json({ error: 'Feedback type and text are required' });
+    }
+    
+    // Get user ID if authenticated
+    let userId = 'anonymous';
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const decoded = await promisify(jwt.verify)(token, JWT_SECRET);
+        userId = decoded.id;
+      }
+    } catch (error) {
+      // Continue as anonymous if token is invalid
+      console.log('Anonymous feedback submission');
+    }
+    
+    // In a real implementation, this would store the feedback in a database
+    // For MVP, we'll just log it
+    privacyLogger('Feedback received', {
+      userId,
+      analysisId,
+      analysisType,
+      cultureId,
+      feedbackType,
+      feedbackText: anonymizePII(feedbackText), // Anonymize any PII in feedback
+      timestamp
+    }, 'FEEDBACK');
+    
+    // In a production environment, we might:
+    // 1. Store the feedback in a database
+    // 2. Send notifications to the team
+    // 3. Create tickets in an issue tracking system
+    
+    res.json({
+      success: true,
+      message: 'Thank you for your feedback. We appreciate your help in improving our AI.'
+    });
+  } catch (error) {
+    console.error('Feedback submission error:', error);
+    res.status(500).json({ error: 'Failed to process feedback' });
+  }
+});
+
 // Function to generate self-signed certificates for development
 function generateSelfSignedCerts() {
   const certDir = path.join(__dirname, 'certs');

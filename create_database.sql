@@ -11,9 +11,6 @@ GO
 USE CulturalAI;
 GO
 
--- Enable foreign key constraints
-SET FOREIGN_KEY_CHECKS=1;
-
 -- -----------------------------------------------------
 -- Table structure for Users
 -- -----------------------------------------------------

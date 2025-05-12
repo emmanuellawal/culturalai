@@ -8,21 +8,37 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const helmet = require('helmet');
-const morgan = require('morgan');
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config();
 
 // Import our utilities
 const { encrypt, decrypt, anonymizePII } = require('./utils/encryption');
 const { privacyLogger, processTextForStorage } = require('./utils/dataRetention');
+const logger = require('./utils/logger');
 const routes = require('./routes'); // Import our routes
+
+// Import middleware
+const requestIdMiddleware = require('./middleware/requestId');
+const requestLogger = require('./middleware/requestLogger');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const clientErrorCollector = require('./middleware/clientErrorCollector');
 
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
+// Initial setup log
+logger.info(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
+
+// Request ID middleware (must be first to ensure all requests have an ID)
+app.use(requestIdMiddleware);
+
 // Middleware for security
 app.use(helmet()); // Adds various HTTP headers for security
-app.use(morgan('combined')); // Logging
+app.use(requestLogger); // Replace morgan with our custom request logger
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -63,7 +79,11 @@ const authenticate = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error', { 
+      error: error.message, 
+      stack: error.stack,
+      requestId: req.requestId
+    });
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
@@ -75,6 +95,9 @@ app.use('/api', routes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
+
+// Client error collection endpoint
+app.post('/api/client-error', clientErrorCollector);
 
 // Text Analysis endpoint
 app.post('/api/analysis/text', authenticate, (req, res) => {
@@ -94,7 +117,8 @@ app.post('/api/analysis/text', authenticate, (req, res) => {
       userId: req.user.id,
       cultureId,
       textOrigin,
-      text // This will be handled properly by the privacy logger
+      text, // This will be handled properly by the privacy logger
+      requestId: req.requestId
     }, 'ANALYZED_TEXT');
     
     // Mock analysis that looks for specific patterns
@@ -155,9 +179,23 @@ app.post('/api/analysis/text', authenticate, (req, res) => {
     const textToStore = processTextForStorage(text);
     // Since our policy is not to store, textToStore will be null
     
+    // Log successful analysis
+    logger.info('Text analysis completed successfully', {
+      userId: req.user.id,
+      cultureId,
+      textOrigin,
+      requestId: req.requestId,
+      issuesDetected: mockAnalysis.issues.length
+    });
+    
     res.json(mockAnalysis);
   } catch (error) {
-    console.error('Text analysis error:', error);
+    logger.error('Text analysis error', { 
+      error: error.message, 
+      stack: error.stack,
+      requestId: req.requestId,
+      userId: req.user?.id
+    });
     res.status(500).json({ error: 'Failed to analyze text' });
   }
 });
@@ -183,17 +221,28 @@ app.post('/api/user/data-deletion-request', authenticate, (req, res) => {
   try {
     // In a real implementation, this would create a data deletion request
     // For MVP, we'll just log it and return success
-    privacyLogger('Data deletion request received', { userId: req.user.id }, 'USER_REQUEST');
+    privacyLogger('Data deletion request received', { 
+      userId: req.user.id,
+      requestId: req.requestId
+    }, 'USER_REQUEST');
     
     // Send confirmation email (placeholder)
-    console.log(`Sending confirmation email for data deletion request to user`);
+    logger.info('Sending confirmation email for data deletion request', {
+      userId: req.user.id,
+      requestId: req.requestId
+    });
     
     res.json({ 
       success: true, 
       message: 'Your data deletion request has been received. We will process it within 30 days and send you a confirmation email.'
     });
   } catch (error) {
-    console.error('Data deletion request error:', error);
+    logger.error('Data deletion request error', { 
+      error: error.message, 
+      stack: error.stack,
+      requestId: req.requestId,
+      userId: req.user?.id
+    });
     res.status(500).json({ error: 'Failed to process data deletion request' });
   }
 });
@@ -276,87 +325,125 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-// Function to generate self-signed certificates for development
+// Apply the 404 and error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// Function to generate self-signed certificates for HTTPS
 function generateSelfSignedCerts() {
-  const certDir = path.join(__dirname, 'certs');
-  const keyPath = path.join(certDir, 'privkey.pem');
-  const certPath = path.join(certDir, 'fullchain.pem');
-  
-  // Check if certificates already exist
-  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-    console.log('SSL certificates already exist');
-    return { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
+  try {
+    // Check if certs directory exists and is accessible
+    const certsDir = path.join(__dirname, 'certs');
+    if (!fs.existsSync(certsDir)) {
+      fs.mkdirSync(certsDir, { recursive: true });
+    }
+    
+    const keyPath = path.join(certsDir, 'server.key');
+    const certPath = path.join(certsDir, 'server.cert');
+    
+    // Check if certificates already exist
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      // Use existing certificates
+      return {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath)
+      };
+    }
+    
+    // If no existing certificates found and it's production, log error
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('HTTPS certificates not found in production', {
+        certsDir,
+        keyPath,
+        certPath
+      });
+      throw new Error('HTTPS certificates required for production');
+    }
+    
+    // For development, generate new self-signed certificates using OpenSSL
+    // Note: In a real production environment, you would use properly signed certificates
+    logger.warn('Generating self-signed certificates for development use only');
+    
+    const { execSync } = require('child_process');
+    
+    // Generate private key
+    execSync(`openssl genrsa -out ${keyPath} 2048`);
+    
+    // Generate self-signed certificate
+    execSync(`openssl req -new -key ${keyPath} -out ${path.join(certsDir, 'server.csr')} -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"`);
+    execSync(`openssl x509 -req -days 365 -in ${path.join(certsDir, 'server.csr')} -signkey ${keyPath} -out ${certPath}`);
+    
+    return {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+  } catch (error) {
+    logger.error('Error generating self-signed certificates', { 
+      error: error.message, 
+      stack: error.stack
+    });
+    
+    // Return null to indicate certificates could not be generated
+    return null;
   }
-  
-  console.log('Generating self-signed certificates for development...');
-  
-  // Ensure the certs directory exists
-  if (!fs.existsSync(certDir)) {
-    fs.mkdirSync(certDir, { recursive: true });
-  }
-  
-  // In a real implementation, we would use a library like selfsigned or openssl
-  // For MVP, we'll create placeholder files with instructions
-  const keyContent = '-----BEGIN PRIVATE KEY-----\n' +
-                    'Replace this with your actual private key\n' +
-                    '-----END PRIVATE KEY-----';
-  
-  const certContent = '-----BEGIN CERTIFICATE-----\n' +
-                     'Replace this with your actual certificate\n' +
-                     '-----END CERTIFICATE-----';
-  
-  fs.writeFileSync(keyPath, keyContent);
-  fs.writeFileSync(certPath, certContent);
-  
-  console.log('Created placeholder certificate files. Replace with actual certificates before production use.');
-  
-  return { key: keyContent, cert: certContent };
 }
 
-// Start the appropriate servers based on environment
-if (process.env.NODE_ENV === 'production') {
-  try {
-    // In production, attempt to load SSL certificates
-    const sslOptions = {
-      key: fs.readFileSync(path.join(__dirname, 'certs', 'privkey.pem')),
-      cert: fs.readFileSync(path.join(__dirname, 'certs', 'fullchain.pem')),
-    };
+// Start the servers
+http.createServer(app).listen(PORT, () => {
+  logger.info(`HTTP server running on port ${PORT}`);
+});
 
-    // Create HTTPS server
-    https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
-      console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
-    });
-
-    // Create HTTP server only for redirecting to HTTPS
-    http.createServer(app).listen(PORT, () => {
-      console.log(`HTTP Server running on port ${PORT} (redirects to HTTPS)`);
-    });
-  } catch (error) {
-    console.error('Failed to start HTTPS server, falling back to HTTP:', error);
-    // Fallback to HTTP if SSL setup fails
-    http.createServer(app).listen(PORT, () => {
-      console.log(`HTTP Server running on port ${PORT}`);
-    });
-  }
-} else {
-  // In development, generate self-signed certificates
+// Start HTTPS server if enabled
+if (process.env.ENABLE_HTTPS !== 'false') {
   try {
     const sslOptions = generateSelfSignedCerts();
     
-    // Create HTTPS server
-    https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
-      console.log(`HTTPS Server running on port ${HTTPS_PORT} (development)`);
-    });
-    
-    // Create HTTP server
-    http.createServer(app).listen(PORT, () => {
-      console.log(`HTTP Server running on port ${PORT} (development)`);
-    });
+    if (sslOptions) {
+      https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
+        logger.info(`HTTPS server running on port ${HTTPS_PORT}`);
+      });
+    } else {
+      logger.warn('HTTPS server not started due to certificate issues');
+    }
   } catch (error) {
-    console.error('Failed to start HTTPS server in development, falling back to HTTP:', error);
-    // Fallback to HTTP
-    http.createServer(app).listen(PORT, () => {
-      console.log(`HTTP Server running on port ${PORT} (development)`);
+    logger.error('Failed to start HTTPS server', {
+      error: error.message,
+      stack: error.stack
     });
   }
-} 
+}
+
+// Graceful shutdown handler
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  // Close servers, DB connections, etc.
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  // Close servers, DB connections, etc.
+  process.exit(0);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', {
+    error: error.message,
+    stack: error.stack
+  });
+  
+  // Fatal errors should cause the application to exit after logging
+  if (error.fatal) {
+    process.exit(1);
+  }
+});
+
+// Unhandled rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled promise rejection', {
+    reason: reason instanceof Error ? reason.message : reason,
+    stack: reason instanceof Error ? reason.stack : 'No stack trace available',
+    promise
+  });
+}); 

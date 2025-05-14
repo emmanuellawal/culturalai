@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid');
  * GET /api/idioms
  * Get all idioms, optionally filtered by culture
  */
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const { cultureId, language } = req.query;
     let query = 'SELECT * FROM Idioms';
@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
     res.json(idioms);
   } catch (error) {
     console.error('Error getting idioms:', error);
-    res.status(500).json({ message: 'Failed to get idioms', error: error.message });
+    next(error);
   }
 });
 
@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
  * GET /api/idioms/:id
  * Get an idiom by ID
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const idioms = await executeQuery(
@@ -83,7 +83,7 @@ router.get('/:id', async (req, res) => {
     res.json(idiom);
   } catch (error) {
     console.error('Error getting idiom:', error);
-    res.status(500).json({ message: 'Failed to get idiom', error: error.message });
+    next(error);
   }
 });
 
@@ -91,7 +91,7 @@ router.get('/:id', async (req, res) => {
  * POST /api/idioms
  * Create a new idiom
  */
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { 
       cultureId, 
@@ -115,7 +115,8 @@ router.post('/', async (req, res) => {
       { cultureId }
     );
     
-    if (cultures[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!cultures || cultures.length === 0 || cultures[0].count === 0) {
       return res.status(404).json({ message: 'Culture not found' });
     }
     
@@ -170,7 +171,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating idiom:', error);
-    res.status(500).json({ message: 'Failed to create idiom', error: error.message });
+    next(error);
   }
 });
 
@@ -178,7 +179,7 @@ router.post('/', async (req, res) => {
  * PUT /api/idioms/:id
  * Update an idiom
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { 
@@ -198,7 +199,8 @@ router.put('/:id', async (req, res) => {
       { id }
     );
     
-    if (idioms[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!idioms || idioms.length === 0 || idioms[0].count === 0) {
       return res.status(404).json({ message: 'Idiom not found' });
     }
     
@@ -259,7 +261,7 @@ router.put('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating idiom:', error);
-    res.status(500).json({ message: 'Failed to update idiom', error: error.message });
+    next(error);
   }
 });
 
@@ -267,7 +269,7 @@ router.put('/:id', async (req, res) => {
  * DELETE /api/idioms/:id
  * Delete an idiom
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -277,7 +279,8 @@ router.delete('/:id', async (req, res) => {
       { id }
     );
     
-    if (idioms[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!idioms || idioms.length === 0 || idioms[0].count === 0) {
       return res.status(404).json({ message: 'Idiom not found' });
     }
     
@@ -290,7 +293,7 @@ router.delete('/:id', async (req, res) => {
     res.status(204).end();
   } catch (error) {
     console.error('Error deleting idiom:', error);
-    res.status(500).json({ message: 'Failed to delete idiom', error: error.message });
+    next(error);
   }
 });
 

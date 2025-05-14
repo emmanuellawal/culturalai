@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid');
  * GET /api/cultures
  * Get all cultures
  */
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const cultures = await executeQuery(
       'SELECT CultureID, CultureName, Region, PrimaryLanguage, Description, LastUpdated FROM Cultures'
@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     res.json(cultures);
   } catch (error) {
     console.error('Error getting cultures:', error);
-    res.status(500).json({ message: 'Failed to get cultures', error: error.message });
+    next(error);
   }
 });
 
@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
  * GET /api/cultures/:id
  * Get a culture by ID
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const cultures = await executeQuery(
@@ -42,7 +42,7 @@ router.get('/:id', async (req, res) => {
     res.json(cultures[0]);
   } catch (error) {
     console.error('Error getting culture:', error);
-    res.status(500).json({ message: 'Failed to get culture', error: error.message });
+    next(error);
   }
 });
 
@@ -50,7 +50,7 @@ router.get('/:id', async (req, res) => {
  * POST /api/cultures
  * Create a new culture
  */
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { cultureName, region, primaryLanguage, description } = req.body;
     
@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating culture:', error);
-    res.status(500).json({ message: 'Failed to create culture', error: error.message });
+    next(error);
   }
 });
 
@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
  * PUT /api/cultures/:id
  * Update a culture
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { cultureName, region, primaryLanguage, description } = req.body;
@@ -103,7 +103,8 @@ router.put('/:id', async (req, res) => {
       { id }
     );
     
-    if (cultures[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!cultures || cultures.length === 0 || cultures[0].count === 0) {
       return res.status(404).json({ message: 'Culture not found' });
     }
     
@@ -135,7 +136,7 @@ router.put('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating culture:', error);
-    res.status(500).json({ message: 'Failed to update culture', error: error.message });
+    next(error);
   }
 });
 
@@ -143,7 +144,7 @@ router.put('/:id', async (req, res) => {
  * DELETE /api/cultures/:id
  * Delete a culture
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -153,7 +154,8 @@ router.delete('/:id', async (req, res) => {
       { id }
     );
     
-    if (cultures[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!cultures || cultures.length === 0 || cultures[0].count === 0) {
       return res.status(404).json({ message: 'Culture not found' });
     }
     
@@ -166,7 +168,7 @@ router.delete('/:id', async (req, res) => {
     res.status(204).end();
   } catch (error) {
     console.error('Error deleting culture:', error);
-    res.status(500).json({ message: 'Failed to delete culture', error: error.message });
+    next(error);
   }
 });
 

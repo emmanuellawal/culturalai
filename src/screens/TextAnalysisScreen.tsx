@@ -44,7 +44,7 @@ const TextAnalysisScreen = () => {
       try {
         const culturesData = await getCultures();
         setCultures(culturesData);
-        if (culturesData.length > 0) {
+        if (culturesData && culturesData.length > 0) {
           setSelectedCultureId(culturesData[0].id);
         }
       } catch (error) {
@@ -158,7 +158,7 @@ const TextAnalysisScreen = () => {
           </View>
         )}
 
-        {feedback.issues && feedback.issues.length > 0 && (
+        {feedback.issues && Array.isArray(feedback.issues) && feedback.issues.length > 0 && (
           <View>
             <Text style={styles.issuesTitle}>Cultural Considerations</Text>
             {feedback.issues.map((issue: any, index: number) => (
@@ -189,7 +189,7 @@ const TextAnalysisScreen = () => {
           </View>
         )}
 
-        {feedback.alternatives && feedback.alternatives.length > 0 && (
+        {feedback.alternatives && Array.isArray(feedback.alternatives) && feedback.alternatives.length > 0 && (
           <View>
             <Text style={styles.alternativesTitle}>Suggested Alternatives</Text>
             {feedback.alternatives.map((alt: string, index: number) => (

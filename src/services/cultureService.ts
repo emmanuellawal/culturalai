@@ -10,7 +10,10 @@ export const getAllCultures = async (): Promise<Culture[]> => {
     return response.data;
   } catch (error) {
     console.error('Error fetching cultures:', error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Failed to fetch cultures: ${error.response.data.message || error.message}`);
+    }
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
@@ -24,7 +27,10 @@ export const getCultureById = async (cultureId: string): Promise<Culture | null>
       return null;
     }
     console.error(`Error fetching culture with ID ${cultureId}:`, error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Failed to fetch culture: ${error.response.data.message || error.message}`);
+    }
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
@@ -35,7 +41,10 @@ export const getNormsByCultureId = async (cultureId: string): Promise<CulturalNo
     return response.data;
   } catch (error) {
     console.error(`Error fetching norms for culture ID ${cultureId}:`, error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Failed to fetch cultural norms: ${error.response.data.message || error.message}`);
+    }
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
@@ -46,7 +55,10 @@ export const getNormsByCategory = async (cultureId: string, category: NormCatego
     return response.data;
   } catch (error) {
     console.error(`Error fetching norms for culture ID ${cultureId} and category ${category}:`, error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Failed to fetch cultural norms by category: ${error.response.data.message || error.message}`);
+    }
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
@@ -73,7 +85,7 @@ export const getCulturalBriefing = async (cultureId: string): Promise<CulturalBr
     };
   } catch (error) {
     console.error(`Error fetching cultural briefing for culture ID ${cultureId}:`, error);
-    throw error;
+    throw new Error('Failed to load cultural briefing. Please try again later.');
   }
 };
 
@@ -89,7 +101,10 @@ export const searchIdiomsByCulture = async (cultureId: string, query?: string): 
     return response.data;
   } catch (error) {
     console.error(`Error searching idioms for culture ID ${cultureId}:`, error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Failed to search idioms: ${error.response.data.message || error.message}`);
+    }
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
@@ -103,6 +118,9 @@ export const getIdiomById = async (idiomId: string): Promise<Idiom | null> => {
       return null;
     }
     console.error(`Error fetching idiom with ID ${idiomId}:`, error);
-    throw error;
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(`Failed to fetch idiom: ${error.response.data.message || error.message}`);
+    }
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 }; 

@@ -68,3 +68,6 @@
 2025-05-14 12:27:02 info: Loaded database.env configuration {
   "service": "cultural-ai"
 }
+2025-05-14 12:47:39 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}

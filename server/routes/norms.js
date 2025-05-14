@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid');
  * GET /api/norms
  * Get all cultural norms, optionally filtered by culture
  */
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const { cultureId, category } = req.query;
     let query = 'SELECT * FROM CulturalNorms';
@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
     res.json(norms);
   } catch (error) {
     console.error('Error getting cultural norms:', error);
-    res.status(500).json({ message: 'Failed to get cultural norms', error: error.message });
+    next(error);
   }
 });
 
@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
  * GET /api/norms/:id
  * Get a cultural norm by ID
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const norms = await executeQuery(
@@ -63,7 +63,7 @@ router.get('/:id', async (req, res) => {
     res.json(norms[0]);
   } catch (error) {
     console.error('Error getting cultural norm:', error);
-    res.status(500).json({ message: 'Failed to get cultural norm', error: error.message });
+    next(error);
   }
 });
 
@@ -71,7 +71,7 @@ router.get('/:id', async (req, res) => {
  * POST /api/norms
  * Create a new cultural norm
  */
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { 
       cultureId, 
@@ -95,7 +95,8 @@ router.post('/', async (req, res) => {
       { cultureId }
     );
     
-    if (cultures[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!cultures || cultures.length === 0 || cultures[0].count === 0) {
       return res.status(404).json({ message: 'Culture not found' });
     }
     
@@ -137,7 +138,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating cultural norm:', error);
-    res.status(500).json({ message: 'Failed to create cultural norm', error: error.message });
+    next(error);
   }
 });
 
@@ -145,7 +146,7 @@ router.post('/', async (req, res) => {
  * PUT /api/norms/:id
  * Update a cultural norm
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { 
@@ -165,7 +166,8 @@ router.put('/:id', async (req, res) => {
       { id }
     );
     
-    if (norms[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!norms || norms.length === 0 || norms[0].count === 0) {
       return res.status(404).json({ message: 'Cultural norm not found' });
     }
     
@@ -209,7 +211,7 @@ router.put('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating cultural norm:', error);
-    res.status(500).json({ message: 'Failed to update cultural norm', error: error.message });
+    next(error);
   }
 });
 
@@ -217,7 +219,7 @@ router.put('/:id', async (req, res) => {
  * DELETE /api/norms/:id
  * Delete a cultural norm
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -227,7 +229,8 @@ router.delete('/:id', async (req, res) => {
       { id }
     );
     
-    if (norms[0].count === 0) {
+    // Add safety check before accessing index 0
+    if (!norms || norms.length === 0 || norms[0].count === 0) {
       return res.status(404).json({ message: 'Cultural norm not found' });
     }
     
@@ -240,7 +243,7 @@ router.delete('/:id', async (req, res) => {
     res.status(204).end();
   } catch (error) {
     console.error('Error deleting cultural norm:', error);
-    res.status(500).json({ message: 'Failed to delete cultural norm', error: error.message });
+    next(error);
   }
 });
 

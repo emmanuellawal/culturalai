@@ -40,7 +40,7 @@ export const signUp = async (credentials: SignUpCredentials): Promise<User> => {
       throw new Error(error.response.data.error || 'Failed to sign up');
     }
     console.error('Error during sign up:', error);
-    throw error;
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
@@ -68,14 +68,21 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
       throw new Error(error.response.data.error || 'Invalid credentials');
     }
     console.error('Error during login:', error);
-    throw error;
+    throw new Error('Network error or server is unreachable. Please check your connection and try again.');
   }
 };
 
 export const logout = async (): Promise<void> => {
-  // Clear the token
-  authToken = null;
-  return Promise.resolve();
+  try {
+    // Clear the token
+    authToken = null;
+    return Promise.resolve();
+  } catch (error) {
+    console.error('Error during logout:', error);
+    // Even if there's an error, we should clear the local token
+    authToken = null;
+    return Promise.resolve();
+  }
 };
 
 // Get the current auth token

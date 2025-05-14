@@ -263,14 +263,61 @@ function generateSelfSignedCerts() {
     // Note: In a real production environment, you would use properly signed certificates
     logger.warn('Generating self-signed certificates for development use only');
     
-    const { execSync } = require('child_process');
+    const { execSync, spawnSync } = require('child_process');
+    
+    // Check if OpenSSL is available
+    try {
+      const opensslCheck = spawnSync('openssl', ['version']);
+      if (opensslCheck.error || opensslCheck.status !== 0) {
+        logger.error('OpenSSL is not available. Unable to generate self-signed certificates.', {
+          error: opensslCheck.error ? opensslCheck.error.message : 'OpenSSL command failed'
+        });
+        
+        // Provide instructions for manual certificate placement
+        logger.info(`
+          Please install OpenSSL or manually place certificates at:
+          - ${keyPath} (private key)
+          - ${certPath} (certificate)
+          
+          You can generate certificates manually with:
+          openssl genrsa -out ${keyPath} 2048
+          openssl req -new -key ${keyPath} -out ${certsDir}/server.csr -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+          openssl x509 -req -days 365 -in ${certsDir}/server.csr -signkey ${keyPath} -out ${certPath}
+          
+          Alternatively, set ENABLE_HTTPS=false in your environment to disable HTTPS.
+        `);
+        
+        return null;
+      }
+    } catch (error) {
+      logger.error('Error checking for OpenSSL', {
+        error: error.message,
+        stack: error.stack
+      });
+      return null;
+    }
     
     // Generate private key
-    execSync(`openssl genrsa -out ${keyPath} 2048`);
+    try {
+      execSync(`openssl genrsa -out ${keyPath} 2048`);
+    } catch (error) {
+      logger.error('Failed to generate private key', {
+        error: error.message,
+        command: `openssl genrsa -out ${keyPath} 2048`
+      });
+      return null;
+    }
     
     // Generate self-signed certificate
-    execSync(`openssl req -new -key ${keyPath} -out ${path.join(certsDir, 'server.csr')} -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"`);
-    execSync(`openssl x509 -req -days 365 -in ${path.join(certsDir, 'server.csr')} -signkey ${keyPath} -out ${certPath}`);
+    try {
+      execSync(`openssl req -new -key ${keyPath} -out ${path.join(certsDir, 'server.csr')} -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"`);
+      execSync(`openssl x509 -req -days 365 -in ${path.join(certsDir, 'server.csr')} -signkey ${keyPath} -out ${certPath}`);
+    } catch (error) {
+      logger.error('Failed to generate certificate', {
+        error: error.message
+      });
+      return null;
+    }
     
     return {
       key: fs.readFileSync(keyPath),

@@ -26,11 +26,11 @@ This checklist is prioritized, starting with critical issues that are most likel
 
 ## 🛡️ PRIORITY 4: Robustness & Error Handling (Client & Server)
 
--   [ ] **Client Array Indexing:** Review `TextAnalysisScreen.tsx` and `IdiomSearchScreen.tsx` for `array[0]` access (e.g., `culturesData[0].id`) and add checks for `array && array.length > 0` before access.
--   [ ] **Server Array Indexing:** Review `server/routes/cultures.js`, `idioms.js`, `norms.js` for `array[0].property` access (e.g., `cultures[0].count`) and add checks for `array && array.length > 0` before access.
--   [ ] **Server `generateSelfSignedCerts`:** Ensure `openssl` is available in the dev environment if relying on cert generation, or provide clear instructions for manual certificate placement. Consider making generation more robust or optional.
--   [ ] **Client Unhandled Promises:** Review major `async` operations in client services (e.g., API calls in `authService`, `cultureService`, `analysisService`) and ensure `try...catch` blocks handle potential errors gracefully (e.g., updating UI, showing alerts).
--   [ ] **Server Unhandled Promises in Routes:** Wrap the core logic of each route handler function in `server/routes/*.js` within a `try...catch` block that passes errors to `next(error)` or sends an error response.
+-   [x] **Client Array Indexing:** Review `TextAnalysisScreen.tsx` and `IdiomSearchScreen.tsx` for `array[0]` access (e.g., `culturesData[0].id`) and add checks for `array && array.length > 0` before access.
+-   [x] **Server Array Indexing:** Review `server/routes/cultures.js`, `idioms.js`, `norms.js` for `array[0].property` access (e.g., `cultures[0].count`) and add checks for `array && array.length > 0` before access.
+-   [x] **Server `generateSelfSignedCerts`:** Ensure `openssl` is available in the dev environment if relying on cert generation, or provide clear instructions for manual certificate placement. Consider making generation more robust or optional.
+-   [x] **Client Unhandled Promises:** Review major `async` operations in client services (e.g., API calls in `authService`, `cultureService`, `analysisService`) and ensure `try...catch` blocks handle potential errors gracefully (e.g., updating UI, showing alerts).
+-   [x] **Server Unhandled Promises in Routes:** Wrap the core logic of each route handler function in `server/routes/*.js` within a `try...catch` block that passes errors to `next(error)` or sends an error response.
 
 ## 🏗️ PRIORITY 5: Code Structure & Minor Issues
 

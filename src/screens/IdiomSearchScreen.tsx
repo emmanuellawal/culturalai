@@ -38,7 +38,7 @@ const IdiomSearchScreen: React.FC<Props> = ({ navigation }) => {
         setCultures(availableCultures);
         
         // Set the first culture as selected by default if any exist
-        if (availableCultures.length > 0) {
+        if (availableCultures && availableCultures.length > 0) {
           setSelectedCultureId(availableCultures[0].id);
         }
       } catch (error) {

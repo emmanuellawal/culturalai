@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cultural AI - API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .status.online {
+            color: green;
+        }
+        .status.offline {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cultural AI - API Test</h1>
+    
+    <div>
+        <h2>API Status: <span id="apiStatus" class="status">Checking...</span></h2>
+        <button id="checkHealth">Check API Health</button>
+    </div>
+
+    <div class="result">
+        <h3>Response:</h3>
+        <pre id="result">No data yet</pre>
+    </div>
+
+    <script>
+        document.getElementById('checkHealth').addEventListener('click', async () => {
+            const resultElement = document.getElementById('result');
+            const statusElement = document.getElementById('apiStatus');
+            
+            try {
+                resultElement.textContent = 'Loading...';
+                statusElement.textContent = 'Checking...';
+                statusElement.className = 'status';
+                
+                const response = await fetch('http://localhost:3000/api/health');
+                const data = await response.json();
+                
+                resultElement.textContent = JSON.stringify(data, null, 2);
+                statusElement.textContent = 'Online';
+                statusElement.className = 'status online';
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+                statusElement.textContent = 'Offline';
+                statusElement.className = 'status offline';
+            }
+        });
+
+        // Auto-check on page load
+        document.getElementById('checkHealth').click();
+    </script>
+</body>
+</html> 

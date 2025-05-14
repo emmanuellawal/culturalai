@@ -24,7 +24,11 @@
       "package": "com.lawthewall.culturalai"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static",
+      "backgroundColor": "#ffffff",
+      "themeColor": "#4A6FA5"
     }
   }
 }

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../utils/constants';
+import { API_BASE_URL } from '../utils/config';
 import { getToken } from './authService';
 
 /**
@@ -15,10 +15,10 @@ export const analyzeText = async (
   isMyText: boolean
 ) => {
   try {
-    const token = await getToken();
+    const token = getToken();
     
     const response = await axios.post(
-      `${API_BASE_URL}/analysis/text`,
+      `${API_BASE_URL}/api/analysis/text`,
       {
         text,
         cultureId,
@@ -27,7 +27,7 @@ export const analyzeText = async (
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       }
     );

@@ -2,8 +2,11 @@
  * Application Constants
  */
 
-// API Configuration
-export const API_BASE_URL = 'http://localhost:3000/api';
+// Import the API_BASE_URL from config to ensure consistency
+import { API_BASE_URL as ConfigApiBaseUrl } from './config';
+
+// Export the API_BASE_URL from config
+export const API_BASE_URL = ConfigApiBaseUrl;
 
 // App Theme Colors
 export const COLORS = {

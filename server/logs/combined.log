@@ -11,3 +11,60 @@
 {"context":{"timestamp":"2025-05-12T00:04:53.442Z"},"level":"info","message":"Starting server in development mode","timestamp":"2025-05-11 20:04:53:453"}
 {"context":{"timestamp":"2025-05-12T00:04:53.522Z"},"level":"info","message":"HTTP server running on port 3000","timestamp":"2025-05-11 20:04:53:453"}
 {"context":{"timestamp":"2025-05-12T00:04:53.523Z"},"level":"info","message":"HTTPS server running on port 3443","timestamp":"2025-05-11 20:04:53:453"}
+2025-05-12 14:07:48 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:07:48 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:08:00 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:09:05 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:09:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:09:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:09:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:00 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:00 info: Starting server in development mode {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:00 info: HTTP server running on port 3000 {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:00 info: HTTPS server running on port 3443 {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: Starting server in development mode {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: HTTP server running on port 3000 {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: HTTPS server running on port 3443 {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-12 14:10:40 info: Loading database configuration from database.env {
+  "service": "cultural-ai"
+}
+2025-05-14 12:27:02 info: Loaded database.env configuration {
+  "service": "cultural-ai"
+}

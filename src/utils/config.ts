@@ -7,8 +7,8 @@
 
 // API Base URL - Change this based on your environment
 export const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3000'  // Development
-  : 'https://api.culturalai.com'; // Production
+  ? 'http://localhost:3000/api'  // Development
+  : 'https://api.culturalai.com/api'; // Production
 
 // Feature flags
 export const FEATURES = {

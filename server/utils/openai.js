@@ -1,7 +1,7 @@
 /**
  * OpenAI API Integration
  */
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 const dotenv = require('dotenv');
 const logger = require('./logger');
 
@@ -9,16 +9,15 @@ const logger = require('./logger');
 dotenv.config();
 
 // Check if API key is set
-if (!process.env.OPENAI_API_KEY) {
+if (!process.env.OPENAI_API_KEY && !process.env.AI_SERVICE_API_KEY) {
   logger.warn('OpenAI API key is not set. Cultural analysis features will not work properly.');
 }
 
 // OpenAI configuration
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || process.env.AI_SERVICE_API_KEY,
 });
 
-const openai = new OpenAIApi(configuration);
 const defaultModel = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
 
 /**
@@ -32,7 +31,7 @@ const defaultModel = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
  */
 async function analyzeCulturalContext(text, cultureId, cultureName, textOrigin = 'mine') {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY && !process.env.AI_SERVICE_API_KEY) {
       return mockAnalysis(text, cultureName, textOrigin);
     }
 
@@ -63,7 +62,7 @@ Provide analysis in the following JSON format:
 If no issues are found, return an appropriate message in the summary and an empty issues array.
 `;
 
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: defaultModel,
       messages: [
         { role: 'system', content: 'You are a cultural intelligence expert who helps with cross-cultural communication.' },
@@ -73,16 +72,43 @@ If no issues are found, return an appropriate message in the summary and an empt
       max_tokens: 800,
     });
 
-    const analysisText = response.data.choices[0].message.content.trim();
-    const analysis = JSON.parse(analysisText);
+    const analysisText = response.choices[0].message.content.trim();
     
-    return analysis;
+    try {
+      const analysis = JSON.parse(analysisText);
+      return analysis;
+    } catch (parseError) {
+      // Log the raw response if JSON parsing fails
+      logger.error('Failed to parse OpenAI analysis response:', { 
+        error: parseError.message,
+        raw_response: analysisText 
+      });
+      
+      // Return a default structure
+      return {
+        summary: 'Error processing analysis results. The AI response could not be interpreted correctly.',
+        issues: [{
+          type: 'Error',
+          text: 'AI response parsing error',
+          explanation: 'The system encountered a technical issue while analyzing your text. Please try again later.',
+          suggestion: 'You can try simplifying your text or using different wording.'
+        }],
+        alternatives: [],
+        _error: 'JSON_PARSE_ERROR'
+      };
+    }
   } catch (error) {
     logger.error('Error in OpenAI analysis:', error);
     return {
       summary: 'Error analyzing text. Please try again later.',
-      issues: [],
-      alternatives: []
+      issues: [{
+        type: 'Error',
+        text: 'AI service error',
+        explanation: 'The AI service encountered an error while processing your request.',
+        suggestion: 'Please try again later or contact support if the issue persists.'
+      }],
+      alternatives: [],
+      _error: 'API_ERROR'
     };
   }
 }
@@ -97,7 +123,7 @@ If no issues are found, return an appropriate message in the summary and an empt
  */
 async function translateIdiom(idiom, sourceCulture, targetCulture) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY && !process.env.AI_SERVICE_API_KEY) {
       return {
         originalIdiom: idiom,
         translation: 'API key not configured. Translation unavailable.',
@@ -126,7 +152,7 @@ Provide the translation in the following JSON format:
 If there is no clear equivalent, suggest the closest concept and explain the differences.
 `;
 
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: defaultModel,
       messages: [
         { role: 'system', content: 'You are a linguistic expert specializing in cross-cultural idioms and expressions.' },
@@ -136,17 +162,43 @@ If there is no clear equivalent, suggest the closest concept and explain the dif
       max_tokens: 500,
     });
 
-    const translationText = response.data.choices[0].message.content.trim();
-    const translation = JSON.parse(translationText);
+    const translationText = response.choices[0].message.content.trim();
     
-    return translation;
+    try {
+      const translation = JSON.parse(translationText);
+      return translation;
+    } catch (parseError) {
+      // Log the raw response if JSON parsing fails
+      logger.error('Failed to parse OpenAI translation response:', { 
+        error: parseError.message,
+        raw_response: translationText 
+      });
+      
+      // Return a default structure
+      return {
+        originalIdiom: idiom,
+        translation: 'Error processing translation. The AI response could not be interpreted correctly.',
+        literalTranslation: idiom,
+        explanation: 'A technical issue occurred during translation processing.',
+        culturalNotes: [
+          'The system encountered an error while processing your request.',
+          'Please try again with a different phrase or contact support if the issue persists.'
+        ],
+        _error: 'JSON_PARSE_ERROR'
+      };
+    }
   } catch (error) {
     logger.error('Error in idiom translation:', error);
     return {
       originalIdiom: idiom,
       translation: 'Error translating idiom. Please try again later.',
+      literalTranslation: idiom,
       explanation: 'An error occurred during translation.',
-      culturalNotes: []
+      culturalNotes: [
+        'The AI service encountered an error while processing your request.',
+        'Please try again later or contact support if the issue persists.'
+      ],
+      _error: 'API_ERROR'
     };
   }
 }
@@ -201,6 +253,7 @@ function mockAnalysis(text, cultureName, textOrigin) {
   return mockAnalysis;
 }
 
+// Export functions
 module.exports = {
   analyzeCulturalContext,
   translateIdiom

@@ -20,15 +20,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.lawthewall.culturalai"
+      "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro",
-      "output": "static",
-      "backgroundColor": "#ffffff",
-      "themeColor": "#4A6FA5"
+      "favicon": "./assets/favicon.png"
     }
   }
 }
